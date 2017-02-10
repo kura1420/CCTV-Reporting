@@ -1,0 +1,213 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class Dokter extends READY_Controller
+{
+
+  public $page = 'Dokter';
+
+  public function __construct()
+  {
+    parent::__construct();
+
+    $this->load->model('CrudModel');
+  }
+
+  public function index()
+  {
+    $this->load->library('pagination');
+    $config['base_url'] = base_url("dokter/index/");
+    $config['total_rows'] = $this->CrudModel->countData('dokter')->num_rows();
+    $config['per_page'] = 5;
+    $config['full_tag_open'] = '<ul class="pagination pagination-sm">';
+    $config['full_tag_close'] = '</ul>';
+    $config['num_tag_open'] = '<li>';
+    $config['num_tag_close'] = '</li>';
+    $config['cur_tag_open'] = '<li class="disabled"><li class="active"><a href="#">';
+    $config['cur_tag_close'] = '<span class="sr-only"></span></a></li>';
+    $config['next_tag_open'] = '<li>';
+    $config['next_tagl_close'] = '</li>';
+    $config['prev_tag_open'] = '<li>';
+    $config['prev_tagl_close'] = '</li>';
+    $config['first_tag_open'] = '<li>';
+    $config['first_tagl_close'] = '</li>';
+    $config['last_tag_open'] = '<li>';
+    $config['last_tagl_close'] = '</li>';
+    $this->pagination->initialize($config);
+    $data['pages'] = $this->pagination->create_links();
+    $data['listDokter'] = $this->CrudModel->listDataPagination('dokter', $config['per_page'], $this->uri->segment(3));
+
+    $this->content = 'dokter/IndexView';
+
+    $this->layout(
+      (! empty($data)) ? $data : null,
+      $addCss = array(
+        'asset/css/matrix-style.css',
+        'asset/css/matrix-media.css',
+      ),
+      $addJs = array(
+        'asset/js/matrix.js',
+        'asset/js/custom/dokter.js'
+      )
+    );
+  }
+
+  public function tambah()
+  {
+    $data['genId'] = $this->CrudModel->genId('Kode_Dr', 'dokter', 100);
+    $this->content = 'dokter/AddView';
+
+    $this->layout(
+      (! empty($data)) ? $data : null,
+      $addCss = array(
+        'asset/css/jquery.gritter.css',
+        'asset/css/matrix-style.css',
+        'asset/css/matrix-media.css',
+      ),
+      $addJs = array(
+        'asset/js/jquery.validate.js',
+        'asset/js/jquery.gritter.min.js',
+        'asset/js/matrix.js',
+        'asset/js/custom/dokter.js',
+      )
+    );
+  }
+
+  public function perbarui($id = FALSE)
+  {
+    $data['row'] = $this->CrudModel->whereData('dokter', 'Kode_Dr', $id)->row();
+
+    try {
+      if (! isset($data['row'])) {
+        throw new Exception("Error Processing Request data", 1);
+        return false;
+      } else {
+        $this->content = 'dokter/EditView';
+
+        $this->layout(
+          (! empty($data)) ? $data : null,
+          $addCss = array(
+            'asset/css/jquery.gritter.css',
+            'asset/css/matrix-style.css',
+            'asset/css/matrix-media.css',
+          ),
+          $addJs = array(
+            'asset/js/jquery.validate.js',
+            'asset/js/jquery.gritter.min.js',
+            'asset/js/matrix.js',
+            'asset/js/custom/dokter.js',
+          )
+        );
+      }
+    } catch (Exception $e) {
+      echo $e->getMessage();
+    }
+  }
+
+  public function lihat($id = FALSE)
+  {
+    $data['row'] = $this->CrudModel->whereData('dokter', 'Kode_Dr', $id)->row();
+
+    try {
+      if (! isset($data['row'])) {
+        throw new Exception("Error Processing Request data", 1);
+        return false;
+      } else {
+        $this->content = 'dokter/DataView';
+
+        $this->layout(
+          (! empty($data)) ? $data : null,
+          $addCss = array(
+            'asset/css/jquery.gritter.css',
+            'asset/css/matrix-style.css',
+            'asset/css/matrix-media.css',
+          ),
+          $addJs = array(
+            'asset/js/matrix.js',
+          )
+        );
+      }
+    } catch (Exception $e) {
+
+    }
+  }
+
+  public function simpan()
+  {
+    try {
+      if (! is_numeric($this->input->post('Kode_Dr'))) {
+        throw new Exception("Error Processing Request id", 1);
+        return false;
+      } else {
+        $t = $this->CrudModel->whereData('dokter', 'Kode_Dr', $this->input->post('Kode_Dr'))->row();
+
+        $data = array(
+          'Kode_Dr' => $this->input->post('Kode_Dr'),
+          'Nama_Dr' => $this->input->post('Nama_Dr'),
+          'SIP' => $this->input->post('SIP'),
+          'Alamat_Dr' => $this->input->post('Alamat_Dr'),
+          'No_tlp' => $this->input->post('No_tlp')
+        );
+
+        if (empty($t->Kode_Dr)) {
+          $this->CrudModel->saveData('dokter', $data);
+        } else {
+          $this->CrudModel->updateData('Kode_Dr', $this->input->post('Kode_Dr'), 'dokter', $data);
+        }
+
+        $debug = $this->db->error();
+        if (! empty($debug['code'])) {
+          throw new Exception("Error Processing Request saving data", 1);
+          return false;
+        }
+      }
+    } catch (Exception $e) {
+      echo $e->getMessage();
+    }
+  }
+
+  public function hapus($id = FALSE)
+  {
+    try {
+      if (! empty($this->CrudModel->deleteData('dokter', 'Kode_Dr', $id))) {
+        throw new Exception("Error Processing Request delete data", 1);
+        return false;
+      } else {
+        redirect(base_url('dokter'), 'refresh');
+      }
+    } catch (Exception $e) {
+      echo $e->getMessage();
+    }
+  }
+
+  public function cariData()
+  {
+    $search = $this->input->post('postSearch');
+    $result = $this->db->query("select * from dokter where Kode_Dr like '%$search%' or Nama_Dr like '%$search%' or SIP like '%$search%'")->result();
+
+    try {
+      if (! isset($result)) {
+        throw new Exception("Error Processing Request data", 1);
+        return false;
+      } else {
+        foreach ($result as $r) {
+          echo '<tr>';
+            echo '<td>' . $r->Kode_Dr . '</td>';
+            echo '<td>' . $r->Nama_Dr . '</td>';
+            echo '<td>' . $r->SIP . '</td>';
+            echo '<td>' . $r->Alamat_Dr . '</td>';
+            echo '<td>' . $r->No_tlp . '</td>';
+            echo '<td>';
+              echo anchor(base_url('dokter/lihat/' . $r->Kode_Dr), '<i class="icon-eye-open"></i> Lihat', array('class' => 'btn btn-primary btn-mini'));
+              echo anchor(base_url('dokter/perbarui/' . $r->Kode_Dr), '<i class="icon-edit"></i> Perbarui', array('class' => 'btn btn-warning btn-mini'));
+              echo anchor(base_url('dokter/hapus/' . $r->Kode_Dr), '<i class="icon-trash"></i> Hapus', array('class' => 'btn btn-danger btn-mini'));
+            echo '</td>';
+          echo '</tr>';
+        }
+      }
+    } catch (Exception $e) {
+      echo $e->getMessage();
+    }
+  }
+
+}
